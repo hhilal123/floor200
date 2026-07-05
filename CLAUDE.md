@@ -9,5 +9,6 @@ Quick reference (see `AGENTS.md` for full detail, and defer to it if anything he
 - Every attribution must carry an explicit confidence level.
 - External CLI calls (`git`, `gh`, `ccusage`) must go through the mockable `CommandRunner` in `src/process.ts` — unit tests must not make real network or subprocess calls.
 - A task is only done when `pnpm build` and `pnpm test` both pass, the CLI command works locally, and no privacy rule is violated.
+- Never merge a PR with a failing or pending CI check. GitHub cannot enforce this as branch protection on this repo (private repo, free plan), so it is a hard rule here instead — treat it as non-negotiable, not optional.
 
 See `ROADMAP.md` for what's built and what's next. Design docs for past features live in `docs/superpowers/specs/` and `docs/superpowers/plans/` — check there before re-deriving a decision that's already been made.
