@@ -30,6 +30,7 @@ import {
   GitHubResponseError,
 } from "./github.js";
 import { renderReport } from "./report.js";
+import { RoiReportDataError, runRoiReport } from "./roi-report.js";
 import { checkStatus, renderStatus } from "./status.js";
 import {
   CcusageMissingError,
@@ -116,12 +117,23 @@ program
   .command("report")
   .description("Print an ROI report")
   .option("--demo", "use built-in fake data")
-  .action((options: { demo?: boolean }) => {
-    if (!options.demo) {
-      program.error("The first version only supports: floor200 report --demo");
+  .action(async (options: { demo?: boolean }) => {
+    if (options.demo) {
+      printDemo();
+      return;
     }
 
-    printDemo();
+    try {
+      const { report } = await runRoiReport();
+      console.log(report);
+    } catch (error) {
+      if (error instanceof RoiReportDataError) {
+        program.error(
+          `Missing or malformed ROI report input: ${error.fileName}. Run floor200 attribute first.`,
+        );
+      }
+      throw error;
+    }
   });
 
 program

@@ -326,3 +326,51 @@ describe("floor200 attribute", () => {
     expect(result.stderr).toContain("Missing or malformed attribution input: usage.json");
   });
 });
+
+describe("floor200 report", () => {
+  it("still prints the demo report", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "floor200-cli-report-"));
+    temporaryDirectories.push(directory);
+    const result = runCli(directory, ["report", "--demo"]);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Floor200 — AI Coding ROI Report");
+  });
+
+  it("fails clearly when attributions.json is missing", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "floor200-cli-report-"));
+    temporaryDirectories.push(directory);
+    const result = runCli(directory, ["report"]);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("Missing or malformed ROI report input: attributions.json");
+  });
+
+  it("prints a real ROI report computed from attributions.json", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "floor200-cli-report-"));
+    temporaryDirectories.push(directory);
+    const dataDirectory = join(directory, ".floor200", "data");
+    await mkdir(dataDirectory, { recursive: true });
+    await writeFile(
+      join(dataDirectory, "attributions.json"),
+      JSON.stringify([
+        {
+          sessionId: "a", source: "claude", model: "claude-opus", commitSha: "abc", prNumber: 1,
+          confidence: "high", confidenceScore: 0.9, method: "time+pr-commit", explanation: "matched",
+          estimatedCostUsd: 10, sessionStartedAt: "2026-07-01T10:00:00Z",
+          commitCommittedAt: "2026-07-01T11:00:00Z", prMergedAt: "2026-07-01T12:00:00Z",
+        },
+        {
+          sessionId: "b", source: "claude", model: "claude-opus", commitSha: null, prNumber: null,
+          confidence: "unknown", confidenceScore: 0, method: "unattributed", explanation: "no match",
+          estimatedCostUsd: 5, sessionStartedAt: "2026-07-02T10:00:00Z",
+          commitCommittedAt: null, prMergedAt: null,
+        },
+      ]),
+    );
+
+    const result = runCli(directory, ["report"]);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Floor200 — AI Coding ROI Report");
+    expect(result.stdout).toContain("$10.00");
+    expect(result.stdout).toContain("Review attributed PRs to validate whether timing-based attribution matches reality.");
+  });
+});
