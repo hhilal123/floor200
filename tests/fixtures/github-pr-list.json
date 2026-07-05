@@ -1,0 +1,38 @@
+[
+  {
+    "number": 42,
+    "title": "Add ROI exports",
+    "url": "https://github.com/acme/floor200/pull/42",
+    "author": { "login": "avery", "id": "U_1", "is_bot": false },
+    "headRefName": "feature/exports",
+    "baseRefName": "main",
+    "createdAt": "2026-06-01T10:00:00Z",
+    "mergedAt": "2026-06-02T12:30:00Z",
+    "additions": 180,
+    "deletions": 24,
+    "changedFiles": 7,
+    "commits": [
+      { "oid": "abc123", "messageHeadline": "Add exports" },
+      { "oid": "def456", "messageHeadline": "Test exports" }
+    ],
+    "labels": [
+      { "name": "feature", "color": "00ff00" },
+      { "name": "agent-assisted", "color": "0000ff" }
+    ]
+  },
+  {
+    "number": 43,
+    "title": "Remove stale workflow",
+    "url": "https://github.com/acme/floor200/pull/43",
+    "author": null,
+    "headRefName": "cleanup/workflow",
+    "baseRefName": "main",
+    "createdAt": "2026-06-03T09:00:00Z",
+    "mergedAt": "2026-06-03T11:00:00Z",
+    "additions": 2,
+    "deletions": 60,
+    "changedFiles": 1,
+    "commits": [],
+    "labels": []
+  }
+]
