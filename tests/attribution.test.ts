@@ -11,7 +11,7 @@ import type { NormalizedPullRequest } from "../src/github.js";
 import type { NormalizedUsageSession } from "../src/usage.js";
 
 const root = "/repo";
-const rootHash = createHash("sha256").update(root).digest("hex");
+const rootHash = createHash("sha256").update(root.replace(/\//g, "-")).digest("hex");
 const temporaryDirectories: string[] = [];
 afterEach(async () => Promise.all(temporaryDirectories.splice(0).map((p) => rm(p, { recursive: true, force: true }))));
 const session = (overrides: Partial<NormalizedUsageSession> = {}): NormalizedUsageSession => ({
@@ -82,9 +82,10 @@ describe("attributeSessions", () => {
   it("preserves unknown sessions with no match or repo mismatch", () => {
     const noMatch = attributeSessions([session()], [], [], root)[0];
     const mismatch = attributeSessions([session({ projectPathHash: "different" })], [commit("a", "2026-07-01T11:00:00Z")], [pr("a")], root)[0];
-    expect(noMatch).toMatchObject({ confidence: "unknown", commitSha: null, confidenceScore: 0 });
+    expect(noMatch).toMatchObject({ confidence: "unknown", commitSha: null, confidenceScore: 0, inScope: true });
     expect(mismatch.confidence).toBe("unknown");
     expect(mismatch.explanation).toContain("repository context did not match");
+    expect(mismatch.inScope).toBe(false);
   });
 
   it("withholds attribution when nearest commits are within fifteen minutes", () => {

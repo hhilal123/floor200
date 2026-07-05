@@ -65,7 +65,8 @@ function modelRoiFor(model: string, attributions: Attribution[]): ModelRoi {
   };
 }
 
-export function computeRoiMetrics(attributions: Attribution[]): RoiMetrics {
+export function computeRoiMetrics(allAttributions: Attribution[]): RoiMetrics {
+  const attributions = allAttributions.filter((a) => a.inScope);
   const totalSpend = attributions.reduce((sum, a) => sum + a.estimatedCostUsd, 0);
   const attributed = attributions.filter(isAttributed);
   const unattributed = attributions.filter((a) => !isAttributed(a));

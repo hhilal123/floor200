@@ -20,7 +20,7 @@ const attribution = (overrides: Partial<Attribution> = {}): Attribution => ({
   sessionId: "s1", source: "claude", model: "claude-opus", commitSha: null, prNumber: null,
   confidence: "unknown", confidenceScore: 0, method: "unattributed",
   explanation: "No attribution.", estimatedCostUsd: 1, sessionStartedAt: "2026-07-01T10:00:00Z",
-  commitCommittedAt: null, prMergedAt: null, ...overrides,
+  commitCommittedAt: null, prMergedAt: null, inScope: true, ...overrides,
 });
 
 describe("computeRoiMetrics", () => {
@@ -36,6 +36,17 @@ describe("computeRoiMetrics", () => {
     expect(metrics.attributedSpend).toBe(10);
     expect(metrics.unattributedSpend).toBe(10);
     expect(metrics.wasteRate).toBe(50);
+  });
+
+  it("excludes out-of-scope sessions (different project) from every total", () => {
+    const metrics = computeRoiMetrics([
+      attribution({ sessionId: "a", confidence: "high", prNumber: 1, estimatedCostUsd: 10 }),
+      attribution({ sessionId: "b", confidence: "unknown", estimatedCostUsd: 1000, inScope: false }),
+    ]);
+
+    expect(metrics.totalSessions).toBe(1);
+    expect(metrics.totalSpend).toBe(10);
+    expect(metrics.topUnattributedSessions).toEqual([]);
   });
 
   it("counts low-confidence commit-only matches as unattributed", () => {
