@@ -17,8 +17,8 @@ If `.floor200.yml` exists and `--force` is absent, the command exits non-zero wi
 The project name is the basename of the current working directory. The generated YAML contains:
 
 - `project.name`: inferred project name
+- `project.repo`: `null`
 - `provider`: `github`
-- `repo`: `null`
 - `season.mode`: `monthly`
 - `privacy.collectPrompts`: `false`
 - `privacy.collectSourceCode`: `false`
