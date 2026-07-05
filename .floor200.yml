@@ -1,0 +1,17 @@
+project:
+  name: "floor200"
+  repo: null
+provider: github
+season:
+  mode: monthly
+privacy:
+  collectPrompts: false
+  collectSourceCode: false
+  hashEmails: true
+sources:
+  github:
+    enabled: false
+  git:
+    enabled: true
+  ccusage:
+    enabled: false

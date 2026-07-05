@@ -285,3 +285,44 @@ describe("floor200 collect usage", () => {
     expect(result.stderr).toContain("Configuration not found. Run floor200 init first.");
   });
 });
+
+describe("floor200 status", () => {
+  it("reports config, git, ccusage, and data file status", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "floor200-cli-status-"));
+    temporaryDirectories.push(directory);
+    await writeFile(join(directory, ".floor200.yml"), "project:\n  repo: null\n");
+    await mkdir(join(directory, ".floor200", "data"), { recursive: true });
+    await writeFile(join(directory, ".floor200", "data", "commits.json"), "[]");
+    spawnSync("git", ["init"], { cwd: directory });
+
+    const result = runCli(directory, ["status"], { PATH: process.env.PATH ?? "" });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Config found: yes");
+    expect(result.stdout).toContain("Git repository detected: yes");
+    expect(result.stdout).toContain("  commits.json: yes");
+    expect(result.stdout).toContain("  prs.json: no");
+  });
+
+  it("reports missing config and data outside a project", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "floor200-cli-status-"));
+    temporaryDirectories.push(directory);
+
+    const result = runCli(directory, ["status"], { PATH: "" });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Config found: no");
+    expect(result.stdout).toContain("Git repository detected: no");
+    expect(result.stdout).toContain("ccusage available: no");
+  });
+});
+
+describe("floor200 attribute", () => {
+  it("fails clearly when required data is missing", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "floor200-cli-attribute-"));
+    temporaryDirectories.push(directory);
+    const result = runCli(directory, ["attribute"]);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("Missing or malformed attribution input: usage.json");
+  });
+});

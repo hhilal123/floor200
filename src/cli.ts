@@ -3,6 +3,7 @@
 import { Command } from "commander";
 import { relative } from "node:path";
 
+import { AttributionDataError, runAttribution } from "./attribution.js";
 import {
   ConfigAlreadyExistsError,
   InvalidConfigError,
@@ -29,6 +30,7 @@ import {
   GitHubResponseError,
 } from "./github.js";
 import { renderReport } from "./report.js";
+import { checkStatus, renderStatus } from "./status.js";
 import {
   CcusageMissingError,
   collectUsage,
@@ -45,6 +47,26 @@ const program = new Command()
 const printDemo = (): void => {
   console.log(renderReport(demoData));
 };
+
+program
+  .command("attribute")
+  .description("Attribute agent usage to commits and merged pull requests")
+  .action(async () => {
+    try {
+      const result = await runAttribution();
+      const counts = result.counts;
+      console.log([
+        `Wrote attributions to ${relative(process.cwd(), result.outputPath)}`,
+        `Confidence: ${counts.high} high, ${counts.medium} medium, ${counts.low} low, ${counts.unknown} unknown`,
+        `Merged-PR ROI eligible: ${result.roiEligibleCount} high/medium PR-backed attributions`,
+      ].join("\n"));
+    } catch (error) {
+      if (error instanceof AttributionDataError) {
+        program.error(`Missing or malformed attribution input: ${error.fileName}`);
+      }
+      throw error;
+    }
+  });
 
 program
   .command("init")
@@ -76,6 +98,13 @@ program
 
       throw error;
     }
+  });
+
+program
+  .command("status")
+  .description("Report Floor200 setup and data collection status")
+  .action(async () => {
+    console.log(renderStatus(await checkStatus()));
   });
 
 program
