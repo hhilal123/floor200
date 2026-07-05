@@ -191,6 +191,21 @@ describe("collectPullRequests", () => {
     ).rejects.toBeInstanceOf(GitHubCollectionError);
   });
 
+  it("retries with a smaller limit when GitHub rejects the large nested query", async () => {
+    const directory = await configuredProject();
+    const runner = new FakeRunner([
+      { stdout: "gh version 2.80.0\n", stderr: "" },
+      { stdout: "", stderr: "" },
+      new CommandExitError("gh", 1, "exceeds the maximum limit"),
+      { stdout: fixture, stderr: "" },
+    ]);
+
+    const result = await collectPullRequests({ baseDirectory: directory, runner });
+
+    expect(result.count).toBe(2);
+    expect(runner.calls.at(-1)?.args).toContain("20");
+  });
+
   it("does not create data output for malformed GitHub JSON", async () => {
     const directory = await configuredProject();
     const runner = new FakeRunner([

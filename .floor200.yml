@@ -1,6 +1,6 @@
 project:
   name: "floor200"
-  repo: null
+  repo: "hhilal123/floor200"
 provider: github
 season:
   mode: monthly
