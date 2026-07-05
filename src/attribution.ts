@@ -23,6 +23,8 @@ export interface Attribution {
   sessionStartedAt: string;
   commitCommittedAt: string | null;
   prMergedAt: string | null;
+  /** False only when the session's project context definitively did not match this repository. */
+  inScope: boolean;
 }
 
 export class AttributionDataError extends Error {
@@ -36,13 +38,17 @@ const HOUR = 3_600_000;
 const WINDOW = 24 * HOUR;
 const AMBIGUITY = 15 * 60_000;
 
-function unknown(session: NormalizedUsageSession, explanation: string): Attribution {
+function unknown(session: NormalizedUsageSession, explanation: string, inScope = true): Attribution {
   return {
     sessionId: session.sourceSessionId, source: session.source, model: session.model,
     commitSha: null, prNumber: null, confidence: "unknown", confidenceScore: 0,
     method: "unattributed", explanation, estimatedCostUsd: session.estimatedCostUsd,
-    sessionStartedAt: session.startedAt, commitCommittedAt: null, prMergedAt: null,
+    sessionStartedAt: session.startedAt, commitCommittedAt: null, prMergedAt: null, inScope,
   };
+}
+
+function encodeProjectPath(root: string): string {
+  return root.replace(/\//g, "-");
 }
 
 export function attributeSessions(
@@ -51,7 +57,7 @@ export function attributeSessions(
   pullRequests: NormalizedPullRequest[],
   repositoryRoot: string,
 ): Attribution[] {
-  const repositoryHash = createHash("sha256").update(repositoryRoot).digest("hex");
+  const repositoryHash = createHash("sha256").update(encodeProjectPath(repositoryRoot)).digest("hex");
   const prByCommit = new Map<string, NormalizedPullRequest>();
   for (const pullRequest of pullRequests) {
     for (const sha of pullRequest.commits) prByCommit.set(sha, pullRequest);
@@ -59,7 +65,7 @@ export function attributeSessions(
 
   return sessions.map((session) => {
     if (session.projectPathHash && session.projectPathHash !== repositoryHash) {
-      return unknown(session, "No attribution: repository context did not match the collected git repository.");
+      return unknown(session, "No attribution: repository context did not match the collected git repository.", false);
     }
     const anchorText = session.endedAt || session.startedAt;
     const anchor = Date.parse(anchorText);
@@ -96,7 +102,7 @@ export function attributeSessions(
         ? `Nearest commit occurred ${hours.toFixed(2)} hours after the session, appears in merged PR #${pullRequest.number}, and ${context}.`
         : `Nearest commit occurred ${hours.toFixed(2)} hours after the session, but no merged PR contains that commit; this is commit-only evidence.`,
       estimatedCostUsd: session.estimatedCostUsd, sessionStartedAt: session.startedAt,
-      commitCommittedAt: commit.committedAt, prMergedAt: pullRequest?.mergedAt ?? null,
+      commitCommittedAt: commit.committedAt, prMergedAt: pullRequest?.mergedAt ?? null, inScope: true,
     };
   });
 }

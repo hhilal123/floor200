@@ -66,17 +66,44 @@ describe("parseCcusageSessions", () => {
     expect(() => parseCcusageSessions("bad json")).toThrow();
     expect(() => parseCcusageSessions('[{"id":"bad"}]')).toThrow(NoParseableUsageError);
   });
+
+  it("falls back to a supplied path-by-session-id map when a record has no path of its own", () => {
+    const result = parseCcusageSessions(fixture, new Map([["session-2", "/Users/example/other-repo"]]));
+    expect(result.sessions[1]).toMatchObject({
+      sourceSessionId: "session-2",
+      projectPathHash: createHash("sha256").update("/Users/example/other-repo").digest("hex"),
+    });
+  });
 });
 
 describe("collectUsage", () => {
   it("runs exact commands and writes safe usage and debug records", async () => {
     const baseDirectory = await project();
-    const runner = new FakeRunner([{ stdout: "ccusage 1\n", stderr: "" }, { stdout: fixture, stderr: "" }]);
+    const runner = new FakeRunner([
+      { stdout: "ccusage 1\n", stderr: "" },
+      { stdout: "[]", stderr: "" },
+      { stdout: fixture, stderr: "" },
+    ]);
     const result = await collectUsage({ baseDirectory, runner });
-    expect(runner.calls).toEqual([{ command: "ccusage", args: ["--version"] }, { command: "ccusage", args: ["session", "--json"] }]);
+    expect(runner.calls).toEqual([
+      { command: "ccusage", args: ["--version"] },
+      { command: "ccusage", args: ["claude", "session", "--json"] },
+      { command: "ccusage", args: ["session", "--json"] },
+    ]);
     expect(result).toMatchObject({ count: 2, skippedCount: 1 });
     expect(JSON.parse(await readFile(result.outputPath, "utf8"))).toHaveLength(2);
     expect(JSON.parse(await readFile(result.debugPath!, "utf8"))).toEqual([{ index: 2, reasonCode: "missing-timestamps" }]);
+  });
+
+  it("still collects sessions when the claude-specific enrichment call fails", async () => {
+    const baseDirectory = await project();
+    const runner = new FakeRunner([
+      { stdout: "ccusage 1\n", stderr: "" },
+      new Error("claude subcommand unavailable"),
+      { stdout: fixture, stderr: "" },
+    ]);
+    const result = await collectUsage({ baseDirectory, runner });
+    expect(result).toMatchObject({ count: 2, skippedCount: 1 });
   });
 
   it("reports a missing ccusage executable", async () => {

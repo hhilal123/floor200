@@ -40,7 +40,7 @@ function modelName(r: Record<string, unknown>): string {
   return models.length === 1 ? models[0] : models.length > 1 ? "mixed" : "unknown";
 }
 
-export function parseCcusageSessions(json: string): UsageParseResult {
+export function parseCcusageSessions(json: string, pathBySessionId?: Map<string, string>): UsageParseResult {
   let parsed: unknown;
   try { parsed = JSON.parse(json); } catch { throw new UsageParseError(); }
   const parsedRecord = record(parsed);
@@ -68,7 +68,7 @@ export function parseCcusageSessions(json: string): UsageParseResult {
     const inputTokens = num(r, "inputTokens", "input_tokens");
     const outputTokens = num(r, "outputTokens", "output_tokens");
     const cacheTokens = num(r, "cacheTokens", "cache_tokens") + num(r, "cacheCreationInputTokens", "cacheCreationTokens") + num(r, "cacheReadInputTokens", "cacheReadTokens");
-    const path = text(r, "projectPath", "repoPath", "cwd");
+    const path = text(r, "projectPath", "repoPath", "cwd") ?? pathBySessionId?.get(id);
     sessions.push({ source: text(r, "source", "agent") ?? "claude-code", sourceSessionId: id, model: modelName(r), startedAt, endedAt,
       durationMs: explicitStart && explicitEnd ? endMs - startMs : null, inputTokens, outputTokens, cacheTokens,
       totalTokens: num(r, "totalTokens", "total_tokens") || inputTokens + outputTokens + cacheTokens,
@@ -79,12 +79,34 @@ export function parseCcusageSessions(json: string): UsageParseResult {
   return { sessions, skipped };
 }
 
+function projectPathsBySessionId(json: string): Map<string, string> {
+  const map = new Map<string, string>();
+  let parsed: unknown;
+  try { parsed = JSON.parse(json); } catch { return map; }
+  const parsedRecord = record(parsed);
+  const candidates = Array.isArray(parsed) ? parsed
+    : parsedRecord && Array.isArray(parsedRecord.sessions) ? parsedRecord.sessions as unknown[]
+    : parsedRecord && Array.isArray(parsedRecord.session) ? parsedRecord.session as unknown[]
+    : [];
+  for (const candidate of candidates) {
+    const r = record(candidate);
+    if (!r) continue;
+    const id = text(r, "sessionId", "id", "sourceSessionId", "period");
+    const path = text(r, "projectPath", "repoPath", "cwd");
+    if (id && path) map.set(id, path);
+  }
+  return map;
+}
+
 export const ccusageAdapter: UsageAdapter = {
   name: "ccusage",
   async collect(runner) {
     try { await runner.run("ccusage", ["--version"]); }
     catch (error) { throw new CcusageMissingError({ cause: error }); }
-    try { return parseCcusageSessions((await runner.run("ccusage", ["session", "--json"])).stdout); }
+    let pathBySessionId: Map<string, string> | undefined;
+    try { pathBySessionId = projectPathsBySessionId((await runner.run("ccusage", ["claude", "session", "--json"])).stdout); }
+    catch { pathBySessionId = undefined; }
+    try { return parseCcusageSessions((await runner.run("ccusage", ["session", "--json"])).stdout, pathBySessionId); }
     catch (error) {
       if (error instanceof UsageParseError || error instanceof NoParseableUsageError) throw error;
       if (error instanceof CommandStartError) throw new CcusageMissingError({ cause: error });

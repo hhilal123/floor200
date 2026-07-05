@@ -356,13 +356,13 @@ describe("floor200 report", () => {
           sessionId: "a", source: "claude", model: "claude-opus", commitSha: "abc", prNumber: 1,
           confidence: "high", confidenceScore: 0.9, method: "time+pr-commit", explanation: "matched",
           estimatedCostUsd: 10, sessionStartedAt: "2026-07-01T10:00:00Z",
-          commitCommittedAt: "2026-07-01T11:00:00Z", prMergedAt: "2026-07-01T12:00:00Z",
+          commitCommittedAt: "2026-07-01T11:00:00Z", prMergedAt: "2026-07-01T12:00:00Z", inScope: true,
         },
         {
           sessionId: "b", source: "claude", model: "claude-opus", commitSha: null, prNumber: null,
           confidence: "unknown", confidenceScore: 0, method: "unattributed", explanation: "no match",
           estimatedCostUsd: 5, sessionStartedAt: "2026-07-02T10:00:00Z",
-          commitCommittedAt: null, prMergedAt: null,
+          commitCommittedAt: null, prMergedAt: null, inScope: true,
         },
       ]),
     );
