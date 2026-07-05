@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { readProjectRepo } from "./config.js";
-import { nodeCommandRunner } from "./process.js";
+import { CommandExitError, nodeCommandRunner } from "./process.js";
 import type { CommandRunner } from "./process.js";
 
 const PR_FIELDS =
@@ -157,21 +157,25 @@ export async function collectPullRequests(
   }
 
   let stdout: string;
+  const listArguments = (limit: string) => [
+    "pr", "list", "--repo", repo, "--state", "merged", "--limit", limit,
+    "--json", PR_FIELDS,
+  ];
   try {
-    ({ stdout } = await runner.run("gh", [
-      "pr",
-      "list",
-      "--repo",
-      repo,
-      "--state",
-      "merged",
-      "--limit",
-      "100",
-      "--json",
-      PR_FIELDS,
-    ]));
+    ({ stdout } = await runner.run("gh", listArguments("100")));
   } catch (error) {
-    throw new GitHubCollectionError({ cause: error });
+    if (
+      error instanceof CommandExitError &&
+      error.stderr.includes("exceeds the maximum limit")
+    ) {
+      try {
+        ({ stdout } = await runner.run("gh", listArguments("20")));
+      } catch (retryError) {
+        throw new GitHubCollectionError({ cause: retryError });
+      }
+    } else {
+      throw new GitHubCollectionError({ cause: error });
+    }
   }
 
   const pullRequests = parsePullRequests(stdout);
