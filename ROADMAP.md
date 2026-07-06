@@ -24,10 +24,10 @@ Tracks what's actually built against what's next. Update this file (not just `pr
 - [x] GitHub repo made public
 - [x] `floor200@0.1.0` published to npm — verified live via clean-directory `npx floor200 report --demo`; registry shasum matches the locally verified tarball
 
-## Next — immediately post-launch
+## Next — post-launch (in order)
 
-- [ ] Claude Code hook installer (auto-capture usage as sessions happen, instead of relying on manual `collect` runs) — demoted from first position: it's a retention feature, and the launch bottleneck is acquisition
-- [ ] Attribution quality iteration from real-user feedback — codex/other-agent project scoping when ccusage exposes it, tunable matching windows
+- [ ] Attribution quality iteration — promoted to first position (2026-07-06): current attribution is conservative v1 (nearest-commit time matching) and not yet at a trustworthy level; the report is only as credible as its attributions. Candidates: codex/other-agent project scoping when ccusage exposes it, tunable matching windows, richer signals beyond commit timing
+- [ ] Claude Code hook installer (auto-capture usage as sessions happen, instead of relying on manual `collect` runs)
 
 ## Later / not yet scoped
 
