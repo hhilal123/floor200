@@ -19,10 +19,10 @@ Tracks what's actually built against what's next. Update this file (not just `pr
 - [x] npm publish readiness — `"private": true` dropped, MIT license, `files`/repo metadata added, tarball verified from a clean directory (`docs/superpowers/specs/2026-07-06-npm-publish-and-readme-design.md`)
 - [x] README as the pitch — privacy-first positioning, sample report output, quickstart, honest "how attribution works and what it can't know" section (same spec)
 
-## Launch (user actions)
+## Launch (completed 2026-07-06)
 
-- [ ] Make the GitHub repo public (README/package metadata already point at it)
-- [ ] `npm publish` (runs `prepublishOnly` build + tests automatically)
+- [x] GitHub repo made public
+- [x] `floor200@0.1.0` published to npm — verified live via clean-directory `npx floor200 report --demo`; registry shasum matches the locally verified tarball
 
 ## Next — immediately post-launch
 
