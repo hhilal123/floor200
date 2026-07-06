@@ -64,6 +64,119 @@ if (args[0] === "--version") {
   return binDirectory;
 }
 
+async function createFakeRunPipelineBin(directory: string): Promise<string> {
+  const binDirectory = join(directory, "bin");
+  await mkdir(binDirectory, { recursive: true });
+
+  const gitExecutable = join(binDirectory, "git");
+  await writeFile(
+    gitExecutable,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args.includes("rev-parse")) {
+  console.log(process.cwd());
+} else if (args.includes("branch")) {
+  console.log("main");
+} else if (args.includes("remote")) {
+  process.exit(1);
+} else if (args.includes("log")) {
+  process.stdout.write("");
+} else {
+  process.exit(2);
+}
+`,
+    "utf8",
+  );
+  await chmod(gitExecutable, 0o755);
+
+  const ccusageExecutable = join(binDirectory, "ccusage");
+  await writeFile(
+    ccusageExecutable,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args[0] === "--version") {
+  console.log("ccusage 1.0.0");
+} else if (args[0] === "claude" || args[0] === "session") {
+  process.stdout.write("[]");
+} else {
+  process.exit(2);
+}
+`,
+    "utf8",
+  );
+  await chmod(ccusageExecutable, 0o755);
+
+  const ghExecutable = join(binDirectory, "gh");
+  await writeFile(
+    ghExecutable,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args[0] === "--version") {
+  console.log("gh version 2.80.0");
+} else if (args[0] === "auth") {
+  process.exit(process.env.FLOOR200_FAKE_AUTH_FAIL === "1" ? 1 : 0);
+} else if (args[0] === "pr" && args[1] === "list") {
+  process.stdout.write(process.env.FLOOR200_FAKE_PRS ?? "[]");
+} else {
+  process.exit(2);
+}
+`,
+    "utf8",
+  );
+  await chmod(ghExecutable, 0o755);
+
+  return binDirectory;
+}
+
+describe("floor200 run", () => {
+  it("auto-initializes, collects, attributes, and prints a report in one command", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "floor200-cli-run-"));
+    temporaryDirectories.push(directory);
+    const binDirectory = await createFakeRunPipelineBin(directory);
+    const fixture = await readFile(
+      join(projectRoot, "tests", "fixtures", "github-pr-list.json"),
+      "utf8",
+    );
+
+    const result = runCli(directory, ["run"], {
+      PATH: `${binDirectory}:${process.env.PATH ?? ""}`,
+      FLOOR200_FAKE_PRS: fixture,
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("No .floor200.yml found");
+    expect(result.stdout).toContain("Floor200 — AI Coding ROI Report");
+    await expect(
+      access(join(directory, ".floor200", "data", "attributions.json")),
+    ).resolves.toBeUndefined();
+  });
+
+  it("warns and continues when gh is unauthenticated, still producing a report", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "floor200-cli-run-"));
+    temporaryDirectories.push(directory);
+    await writeFile(
+      join(directory, ".floor200.yml"),
+      'project:\n  name: "example"\n  repo: "acme/example"\n',
+      "utf8",
+    );
+    const binDirectory = await createFakeRunPipelineBin(directory);
+
+    const result = runCli(directory, ["run"], {
+      PATH: `${binDirectory}:${process.env.PATH ?? ""}`,
+      FLOOR200_FAKE_AUTH_FAIL: "1",
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toContain("GitHub CLI is not authenticated");
+    expect(result.stdout).toContain("Floor200 — AI Coding ROI Report");
+    expect(
+      JSON.parse(
+        await readFile(join(directory, ".floor200", "data", "prs.json"), "utf8"),
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe("floor200 export", () => {
   it.each([
     ["md", "demo-report.md"],
