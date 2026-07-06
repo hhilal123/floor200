@@ -1,15 +1,39 @@
 {
   "name": "floor200",
   "version": "0.1.0",
-  "private": true,
+  "description": "AI coding-agent ROI, from spend to shipped PRs. Local-first — your data never leaves your machine.",
+  "license": "MIT",
+  "author": "Hudson Hilal <hudsonhilal@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hhilal123/floor200.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hhilal123/floor200/issues"
+  },
+  "homepage": "https://github.com/hhilal123/floor200#readme",
+  "keywords": [
+    "ai",
+    "roi",
+    "claude-code",
+    "ccusage",
+    "cli",
+    "developer-tools",
+    "ai-coding-agents",
+    "local-first"
+  ],
   "type": "module",
   "bin": {
     "floor200": "dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/cli.ts --format esm --dts --clean",
     "dev": "tsx src/cli.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "pnpm build && pnpm test"
   },
   "dependencies": {
     "chalk": "^5.6.2",

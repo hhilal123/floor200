@@ -16,11 +16,13 @@ Tracks what's actually built against what's next. Update this file (not just `pr
 - [x] Real ROI report + recommendations engine from collected data — `floor200 report` (`prompts/08-real-roi-report.md`)
 - [x] Project-scoped attribution — usage sessions from other repos are excluded from attribution and report totals (PR #5)
 - [x] One-command pipeline — `floor200 run` chains collect git → collect prs → collect usage → attribute → report, auto-initializing config and degrading gracefully (no `gh` auth, missing `project.repo`, missing ccusage → warn, skip, continue) (`prompts/09-run-pipeline.md`)
+- [x] npm publish readiness — `"private": true` dropped, MIT license, `files`/repo metadata added, tarball verified from a clean directory (`docs/superpowers/specs/2026-07-06-npm-publish-and-readme-design.md`)
+- [x] README as the pitch — privacy-first positioning, sample report output, quickstart, honest "how attribution works and what it can't know" section (same spec)
 
-## Next — pre-launch (in order)
+## Launch (user actions)
 
-- [ ] npm publish readiness — name `floor200` confirmed available; drop `"private": true`, add `files`/repo metadata, verify `npx floor200` from a clean directory
-- [ ] README as the pitch — privacy-first positioning, sample report output, 3-line quickstart, honest "how attribution works and what it can't know" section
+- [ ] Make the GitHub repo public (README/package metadata already point at it)
+- [ ] `npm publish` (runs `prepublishOnly` build + tests automatically)
 
 ## Next — immediately post-launch
 
