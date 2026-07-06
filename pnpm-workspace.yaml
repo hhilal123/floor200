@@ -3,3 +3,8 @@ packages:
 
 allowBuilds:
   esbuild: true
+
+# tsup pins esbuild ^0.27.0; force >=0.28.1 for GHSA fix (Windows dev-server
+# arbitrary file read — dev-only, but keeps the public security tab clean).
+overrides:
+  esbuild: "^0.28.1"

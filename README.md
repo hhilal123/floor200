@@ -107,6 +107,10 @@ Honest limitations:
 | `floor200 status` | Show setup and data-collection status |
 | `floor200 demo` | Print the demo report |
 
+## How this was built
+
+Floor200 was built agent-first — every feature started as a written spec with acceptance criteria, executed by an AI coding agent, and merged only on green CI. The receipts are in the repo: the task prompts in [`prompts/`](prompts/), the design docs in [`docs/superpowers/specs/`](docs/superpowers/specs/), and a [pre-tool-use hook](.claude/scripts/privacy-guard.sh) that mechanically blocks secrets from ever being written during development.
+
 ## License
 
 [MIT](LICENSE)
