@@ -29,6 +29,7 @@ import {
   GitHubCollectionError,
   GitHubResponseError,
 } from "./github.js";
+import { runPipeline } from "./pipeline.js";
 import { renderReport } from "./report.js";
 import { RoiReportDataError, runRoiReport } from "./roi-report.js";
 import { checkStatus, renderStatus } from "./status.js";
@@ -127,6 +128,53 @@ program
       const { report } = await runRoiReport();
       console.log(report);
     } catch (error) {
+      if (error instanceof RoiReportDataError) {
+        program.error(
+          `Missing or malformed ROI report input: ${error.fileName}. Run floor200 attribute first.`,
+        );
+      }
+      throw error;
+    }
+  });
+
+program
+  .command("run")
+  .description("Collect git, PR, and usage data, attribute usage, and print the ROI report")
+  .option("--since <date>", "collect commits since YYYY-MM-DD")
+  .action(async (options: { since?: string }) => {
+    try {
+      const result = await runPipeline({
+        since: options.since,
+        onStep: (step) => {
+          console.log(step.detail);
+          if (step.warning) {
+            console.error(`Warning: ${step.warning}`);
+          }
+        },
+      });
+      console.log();
+      console.log(result.report);
+    } catch (error) {
+      if (error instanceof InvalidSinceDateError) {
+        program.error("Use --since YYYY-MM-DD with a valid calendar date.");
+      }
+      if (error instanceof InvalidConfigError) {
+        program.error(
+          "Could not read .floor200.yml. Check that it contains valid YAML.",
+        );
+      }
+      if (error instanceof GitRepositoryError) {
+        program.error("Current directory is not inside a git repository.");
+      }
+      if (error instanceof GitLogParseError) {
+        program.error("Git returned malformed commit data.");
+      }
+      if (error instanceof GitCollectionError) {
+        program.error("Could not collect local git commits.");
+      }
+      if (error instanceof AttributionDataError) {
+        program.error(`Missing or malformed attribution input: ${error.fileName}`);
+      }
       if (error instanceof RoiReportDataError) {
         program.error(
           `Missing or malformed ROI report input: ${error.fileName}. Run floor200 attribute first.`,

@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, type ExecFileException } from "node:child_process";
 
 export interface CommandResult {
   stdout: string;
@@ -10,7 +10,7 @@ export interface CommandRunner {
 }
 
 type ExecFileCallback = (
-  error: NodeJS.ErrnoException | null,
+  error: ExecFileException | null,
   stdout: string,
   stderr: string,
 ) => void;
@@ -63,7 +63,7 @@ export function createCommandRunner(
             }
 
             reject(
-              new CommandExitError(command, error.code, stderr, {
+              new CommandExitError(command, error.code ?? undefined, stderr, {
                 cause: error,
               }),
             );

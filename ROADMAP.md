@@ -15,10 +15,10 @@ Tracks what's actually built against what's next. Update this file (not just `pr
 - [x] Attribution engine — `floor200 attribute` (`prompts/07-attribution-engine.md`)
 - [x] Real ROI report + recommendations engine from collected data — `floor200 report` (`prompts/08-real-roi-report.md`)
 - [x] Project-scoped attribution — usage sessions from other repos are excluded from attribution and report totals (PR #5)
+- [x] One-command pipeline — `floor200 run` chains collect git → collect prs → collect usage → attribute → report, auto-initializing config and degrading gracefully (no `gh` auth, missing `project.repo`, missing ccusage → warn, skip, continue) (`prompts/09-run-pipeline.md`)
 
 ## Next — pre-launch (in order)
 
-- [ ] One-command pipeline — single command chaining collect git → collect prs → collect usage → attribute → report, with graceful per-step degradation (no `gh` auth → warn, skip PRs, continue)
 - [ ] npm publish readiness — name `floor200` confirmed available; drop `"private": true`, add `files`/repo metadata, verify `npx floor200` from a clean directory
 - [ ] README as the pitch — privacy-first positioning, sample report output, 3-line quickstart, honest "how attribution works and what it can't know" section
 

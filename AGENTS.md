@@ -100,6 +100,10 @@ Store by default:
 * changed file paths
 * CI status
 
+## Roadmap upkeep
+
+After a feature lands, run `/update-roadmap` to update `ROADMAP.md`'s Done/Next/Later sections.
+
 ## MVP order
 
 1. Demo ROI report with fake data.
