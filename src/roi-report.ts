@@ -18,6 +18,7 @@ export interface ModelRoi {
   totalSpend: number;
   attributedSpend: number;
   unattributedSpend: number;
+  pendingSpend: number;
   prBackedAttributedSessions: number;
   uniqueAttributedMergedPrs: number;
   costPerAttributedMergedPr: number;
@@ -36,6 +37,8 @@ export interface RoiMetrics {
   totalSpend: number;
   attributedSpend: number;
   unattributedSpend: number;
+  pendingSessions: number;
+  pendingSpend: number;
   wasteRate: number;
   prBackedAttributedSessions: number;
   uniqueAttributedMergedPrs: number;
@@ -49,16 +52,22 @@ function isAttributed(attribution: Attribution): boolean {
   return attribution.confidence === "high" || attribution.confidence === "medium";
 }
 
+function isPending(attribution: Attribution): boolean {
+  return attribution.method === "pending-data";
+}
+
 function modelRoiFor(model: string, attributions: Attribution[]): ModelRoi {
   const totalSpend = attributions.reduce((sum, a) => sum + a.estimatedCostUsd, 0);
   const attributed = attributions.filter(isAttributed);
   const attributedSpend = attributed.reduce((sum, a) => sum + a.estimatedCostUsd, 0);
+  const pendingSpend = attributions.filter(isPending).reduce((sum, a) => sum + a.estimatedCostUsd, 0);
   const uniqueAttributedMergedPrs = new Set(attributed.map((a) => a.prNumber)).size;
   return {
     model,
     totalSpend,
     attributedSpend,
-    unattributedSpend: totalSpend - attributedSpend,
+    unattributedSpend: totalSpend - attributedSpend - pendingSpend,
+    pendingSpend,
     prBackedAttributedSessions: attributed.length,
     uniqueAttributedMergedPrs,
     costPerAttributedMergedPr: uniqueAttributedMergedPrs === 0 ? 0 : attributedSpend / uniqueAttributedMergedPrs,
@@ -69,9 +78,11 @@ export function computeRoiMetrics(allAttributions: Attribution[]): RoiMetrics {
   const attributions = allAttributions.filter((a) => a.inScope);
   const totalSpend = attributions.reduce((sum, a) => sum + a.estimatedCostUsd, 0);
   const attributed = attributions.filter(isAttributed);
-  const unattributed = attributions.filter((a) => !isAttributed(a));
+  const pending = attributions.filter(isPending);
+  const unattributed = attributions.filter((a) => !isAttributed(a) && !isPending(a));
   const attributedSpend = attributed.reduce((sum, a) => sum + a.estimatedCostUsd, 0);
-  const unattributedSpend = totalSpend - attributedSpend;
+  const pendingSpend = pending.reduce((sum, a) => sum + a.estimatedCostUsd, 0);
+  const unattributedSpend = totalSpend - attributedSpend - pendingSpend;
   const uniqueAttributedMergedPrs = new Set(attributed.map((a) => a.prNumber)).size;
 
   const confidenceCounts: Record<AttributionConfidence, number> = { high: 0, medium: 0, low: 0, unknown: 0 };
@@ -94,7 +105,8 @@ export function computeRoiMetrics(allAttributions: Attribution[]): RoiMetrics {
   return {
     totalSessions: attributions.length,
     totalSpend, attributedSpend, unattributedSpend,
-    wasteRate: totalSpend === 0 ? 0 : (unattributedSpend / totalSpend) * 100,
+    pendingSessions: pending.length, pendingSpend,
+    wasteRate: totalSpend - pendingSpend === 0 ? 0 : (unattributedSpend / (totalSpend - pendingSpend)) * 100,
     prBackedAttributedSessions: attributed.length,
     uniqueAttributedMergedPrs,
     costPerAttributedMergedPr: uniqueAttributedMergedPrs === 0 ? 0 : attributedSpend / uniqueAttributedMergedPrs,
@@ -149,6 +161,7 @@ export function renderRoiReport(metrics: RoiMetrics, useColor = true): string {
     ["Total estimated spend", money(metrics.totalSpend)],
     ["Attributed spend", money(metrics.attributedSpend)],
     ["Unattributed spend", money(metrics.unattributedSpend)],
+    ["Pending spend (evidence too recent)", money(metrics.pendingSpend)],
     ["Waste rate", percent(metrics.wasteRate)],
     ["PR-backed attributed sessions", metrics.prBackedAttributedSessions],
     ["Unique attributed merged PRs", metrics.uniqueAttributedMergedPrs],
@@ -164,11 +177,12 @@ export function renderRoiReport(metrics: RoiMetrics, useColor = true): string {
   );
 
   const modelTable = new Table({
-    head: ["Model", "Total spend", "Attributed", "Unattributed", "Attributed merged PRs", "Cost / merged PR"],
+    head: ["Model", "Total spend", "Attributed", "Unattributed", "Pending", "Attributed merged PRs", "Cost / merged PR"],
   });
   for (const model of metrics.modelBreakdown) {
     modelTable.push([
       model.model, money(model.totalSpend), money(model.attributedSpend), money(model.unattributedSpend),
+      money(model.pendingSpend),
       model.uniqueAttributedMergedPrs,
       model.uniqueAttributedMergedPrs === 0 ? "—" : money(model.costPerAttributedMergedPr),
     ]);
@@ -183,11 +197,17 @@ export function renderRoiReport(metrics: RoiMetrics, useColor = true): string {
 
   const recommendations = buildRecommendations(metrics);
 
+  const pendingNote = metrics.pendingSessions === 0 ? [] : [
+    "",
+    `${metrics.pendingSessions} session(s) are too recent to attribute (their commits may not have existed when data was collected); re-run \`floor200 run\` later to resolve them.`,
+  ];
+
   return [
     color.bold.cyan("Floor200 — AI Coding ROI Report"),
     "",
     color.bold("Summary"),
     summary.toString(),
+    ...pendingNote,
     "",
     color.bold("Attribution confidence"),
     confidence.toString(),

@@ -118,7 +118,9 @@ describe("collectGitCommits", () => {
       { stdout: fixture, stderr: "" },
     ]);
 
-    const result = await collectGitCommits({ baseDirectory: directory, since: "2026-07-01", runner });
+    const result = await collectGitCommits({
+      baseDirectory: directory, since: "2026-07-01", runner, now: new Date("2026-07-07T12:00:00Z"),
+    });
     expect(runner.calls[3]).toEqual({
       command: "git",
       args: ["-C", "/repo/root", "log", "--since=2026-07-01T00:00:00", "--date=iso-strict", "--format=%x1e%H%x1f%s%x1f%an%x1f%ae%x1f%cI", "--numstat", "--no-renames"],
@@ -127,6 +129,7 @@ describe("collectGitCommits", () => {
     const output = JSON.parse(await readFile(result.outputPath, "utf8"));
     expect(output.repository).toEqual({ root: "/repo/root", branchName: "main", remoteOrigin: "git@github.com:acme/repo.git" });
     expect(output.since).toBe("2026-07-01");
+    expect(output.collectedAt).toBe("2026-07-07T12:00:00.000Z");
     expect(output.commits[0]).not.toHaveProperty("authorEmail");
   });
 

@@ -15,6 +15,7 @@
       { "oid": "abc123", "messageHeadline": "Add exports" },
       { "oid": "def456", "messageHeadline": "Test exports" }
     ],
+    "mergeCommit": { "oid": "merge789" },
     "labels": [
       { "name": "feature", "color": "00ff00" },
       { "name": "agent-assisted", "color": "0000ff" }
@@ -33,6 +34,7 @@
     "deletions": 60,
     "changedFiles": 1,
     "commits": [],
+    "mergeCommit": null,
     "labels": []
   }
 ]

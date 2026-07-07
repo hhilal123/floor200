@@ -6,7 +6,7 @@ import { CommandExitError, nodeCommandRunner } from "./process.js";
 import type { CommandRunner } from "./process.js";
 
 const PR_FIELDS =
-  "number,title,url,author,headRefName,baseRefName,createdAt,mergedAt,additions,deletions,changedFiles,commits,labels";
+  "number,title,url,author,headRefName,baseRefName,createdAt,mergedAt,additions,deletions,changedFiles,commits,mergeCommit,labels";
 
 export interface NormalizedPullRequest {
   number: number;
@@ -21,6 +21,7 @@ export interface NormalizedPullRequest {
   deletions: number;
   changedFiles: number;
   commits: string[];
+  mergeCommitSha: string | null;
   labels: string[];
 }
 
@@ -105,6 +106,11 @@ function normalizePullRequest(value: unknown): NormalizedPullRequest {
     throw new GitHubResponseError();
   }
 
+  const mergeCommit = value.mergeCommit ?? null;
+  if (mergeCommit !== null && !isRecord(mergeCommit)) {
+    throw new GitHubResponseError();
+  }
+
   return {
     number: numberField(value, "number"),
     title: stringField(value, "title"),
@@ -118,6 +124,7 @@ function normalizePullRequest(value: unknown): NormalizedPullRequest {
     deletions: numberField(value, "deletions"),
     changedFiles: numberField(value, "changedFiles"),
     commits: nestedStrings(value.commits, "oid"),
+    mergeCommitSha: mergeCommit === null ? null : stringField(mergeCommit, "oid"),
     labels: nestedStrings(value.labels, "name"),
   };
 }

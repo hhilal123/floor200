@@ -82,6 +82,7 @@ describe("parsePullRequests", () => {
         deletions: 24,
         changedFiles: 7,
         commits: ["abc123", "def456"],
+        mergeCommitSha: "merge789",
         labels: ["feature", "agent-assisted"],
       },
       {
@@ -97,6 +98,7 @@ describe("parsePullRequests", () => {
         deletions: 60,
         changedFiles: 1,
         commits: [],
+        mergeCommitSha: null,
         labels: [],
       },
     ]);
@@ -142,7 +144,7 @@ describe("collectPullRequests", () => {
           "--limit",
           "100",
           "--json",
-          "number,title,url,author,headRefName,baseRefName,createdAt,mergedAt,additions,deletions,changedFiles,commits,labels",
+          "number,title,url,author,headRefName,baseRefName,createdAt,mergedAt,additions,deletions,changedFiles,commits,mergeCommit,labels",
         ],
       },
     ]);
