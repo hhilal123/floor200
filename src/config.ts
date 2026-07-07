@@ -2,6 +2,8 @@ import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { parse } from "yaml";
 
+import { DEFAULT_ATTRIBUTION_TUNING, type AttributionTuning } from "./attribution.js";
+
 export interface InitOptions {
   baseDirectory?: string;
   force?: boolean;
@@ -59,6 +61,10 @@ privacy:
   collectPrompts: false
   collectSourceCode: false
   hashEmails: true
+attribution:
+  lookbackHours: 2
+  windowHours: 24
+  ambiguityMinutes: 15
 sources:
   github:
     enabled: false
@@ -111,6 +117,42 @@ export async function readProjectRepo(
   }
 
   return normalizedRepo;
+}
+
+export async function readAttributionTuning(
+  baseDirectory = process.cwd(),
+): Promise<AttributionTuning> {
+  const configPath = join(baseDirectory, ".floor200.yml");
+  let contents: string;
+  try {
+    contents = await readFile(configPath, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return { ...DEFAULT_ATTRIBUTION_TUNING };
+    }
+    throw error;
+  }
+
+  let config: unknown;
+  try {
+    config = parse(contents);
+  } catch {
+    throw new InvalidConfigError(configPath);
+  }
+
+  const section = isRecord(config) && isRecord(config.attribution)
+    ? config.attribution
+    : {};
+  const tuning = { ...DEFAULT_ATTRIBUTION_TUNING };
+  for (const key of Object.keys(tuning) as Array<keyof AttributionTuning>) {
+    const value = section[key];
+    if (value === undefined || value === null) continue;
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+      throw new InvalidConfigError(configPath);
+    }
+    tuning[key] = value;
+  }
+  return tuning;
 }
 
 export async function requireProjectConfig(

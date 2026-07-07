@@ -18,6 +18,7 @@ Tracks what's actually built against what's next. Update this file (not just `pr
 - [x] One-command pipeline — `floor200 run` chains collect git → collect prs → collect usage → attribute → report, auto-initializing config and degrading gracefully (no `gh` auth, missing `project.repo`, missing ccusage → warn, skip, continue) (`prompts/09-run-pipeline.md`)
 - [x] npm publish readiness — `"private": true` dropped, MIT license, `files`/repo metadata added, tarball verified from a clean directory (`docs/superpowers/specs/2026-07-06-npm-publish-and-readme-design.md`)
 - [x] README as the pitch — privacy-first positioning, sample report output, quickstart, honest "how attribution works and what it can't know" section (same spec)
+- [x] Attribution quality iteration — PR-unit candidate grouping (merge pair = corroboration, not ambiguity), 2h lookback window for mid-session commits, tunable windows via `attribution:` config, `pending-data` state for right-censored sessions, confidence score/label reconciliation; in-scope attributed sessions went from 1 to 18 on real data (`docs/superpowers/specs/2026-07-07-attribution-quality-iteration.md`)
 
 ## Launch (completed 2026-07-06)
 
@@ -26,8 +27,8 @@ Tracks what's actually built against what's next. Update this file (not just `pr
 
 ## Next — post-launch (in order)
 
-- [ ] Attribution quality iteration — promoted to first position (2026-07-06): current attribution is conservative v1 (nearest-commit time matching) and not yet at a trustworthy level; the report is only as credible as its attributions. Candidates: codex/other-agent project scoping when ccusage exposes it, tunable matching windows, richer signals beyond commit timing
 - [ ] Claude Code hook installer (auto-capture usage as sessions happen, instead of relying on manual `collect` runs)
+- [ ] Attribution quality round 2 (not yet scoped): codex/other-agent project scoping when ccusage exposes it, richer signals beyond commit timing (e.g. changed-file overlap)
 
 ## Later / not yet scoped
 

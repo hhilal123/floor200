@@ -146,7 +146,8 @@ export async function collectGitCommits(
     const outputPath = join(dataDirectory, "commits.json");
     await mkdir(dataDirectory, { recursive: true });
     await writeFile(outputPath, `${JSON.stringify({
-      repository: { root, branchName, remoteOrigin }, since, commits,
+      repository: { root, branchName, remoteOrigin }, since,
+      collectedAt: (options.now ?? new Date()).toISOString(), commits,
     }, null, 2)}\n`, "utf8");
     return { count: commits.length, outputPath };
   } catch (error) {

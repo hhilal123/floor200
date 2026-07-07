@@ -12,6 +12,7 @@ import {
   MissingProjectRepoError,
   requireProjectConfig,
   initializeProject,
+  readAttributionTuning,
   readProjectRepo,
   serializeDefaultConfig,
 } from "../src/config.js";
@@ -34,6 +35,45 @@ async function temporaryProject(name = "floor200-test"): Promise<string> {
   return directory;
 }
 
+describe("readAttributionTuning", () => {
+  it("returns defaults when no config file exists", async () => {
+    const directory = await temporaryProject();
+    await expect(readAttributionTuning(directory)).resolves.toEqual({
+      lookbackHours: 2, windowHours: 24, ambiguityMinutes: 15,
+    });
+  });
+
+  it("returns defaults when the attribution section is absent", async () => {
+    const directory = await temporaryProject();
+    await writeFile(join(directory, ".floor200.yml"), 'project:\n  name: "x"\n', "utf8");
+    await expect(readAttributionTuning(directory)).resolves.toEqual({
+      lookbackHours: 2, windowHours: 24, ambiguityMinutes: 15,
+    });
+  });
+
+  it("reads tuning overrides from the attribution section", async () => {
+    const directory = await temporaryProject();
+    await writeFile(
+      join(directory, ".floor200.yml"),
+      'project:\n  name: "x"\nattribution:\n  lookbackHours: 4\n  windowHours: 12\n',
+      "utf8",
+    );
+    await expect(readAttributionTuning(directory)).resolves.toEqual({
+      lookbackHours: 4, windowHours: 12, ambiguityMinutes: 15,
+    });
+  });
+
+  it("rejects non-positive or non-numeric tuning values", async () => {
+    const directory = await temporaryProject();
+    await writeFile(
+      join(directory, ".floor200.yml"),
+      'attribution:\n  windowHours: -1\n',
+      "utf8",
+    );
+    await expect(readAttributionTuning(directory)).rejects.toBeInstanceOf(InvalidConfigError);
+  });
+});
+
 describe("serializeDefaultConfig", () => {
   it("serializes every privacy-safe default", () => {
     expect(serializeDefaultConfig("floor200")).toBe(`project:
@@ -46,6 +86,10 @@ privacy:
   collectPrompts: false
   collectSourceCode: false
   hashEmails: true
+attribution:
+  lookbackHours: 2
+  windowHours: 24
+  ambiguityMinutes: 15
 sources:
   github:
     enabled: false

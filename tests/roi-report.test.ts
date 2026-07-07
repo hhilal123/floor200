@@ -99,6 +99,30 @@ describe("computeRoiMetrics", () => {
     expect(metrics.confidenceCounts).toEqual({ high: 1, medium: 1, low: 1, unknown: 1 });
   });
 
+  it("separates pending-data spend from unattributed waste", () => {
+    const metrics = computeRoiMetrics([
+      attribution({ sessionId: "a", confidence: "high", prNumber: 1, estimatedCostUsd: 10 }),
+      attribution({ sessionId: "b", method: "pending-data", estimatedCostUsd: 6 }),
+      attribution({ sessionId: "c", estimatedCostUsd: 4 }),
+    ]);
+
+    expect(metrics.pendingSessions).toBe(1);
+    expect(metrics.pendingSpend).toBe(6);
+    expect(metrics.unattributedSpend).toBe(4);
+    expect(metrics.wasteRate).toBeCloseTo((4 / 14) * 100);
+    expect(metrics.topUnattributedSessions.map((s) => s.sessionId)).toEqual(["c"]);
+  });
+
+  it("excludes pending spend from model-level unattributed spend", () => {
+    const metrics = computeRoiMetrics([
+      attribution({ sessionId: "a", model: "claude", method: "pending-data", estimatedCostUsd: 6 }),
+      attribution({ sessionId: "b", model: "claude", estimatedCostUsd: 4 }),
+    ]);
+
+    expect(metrics.modelBreakdown[0].pendingSpend).toBe(6);
+    expect(metrics.modelBreakdown[0].unattributedSpend).toBe(4);
+  });
+
   it("returns only the 5 costliest unattributed sessions, sorted descending", () => {
     const attributions = Array.from({ length: 7 }, (_, i) =>
       attribution({ sessionId: `s${i}`, confidence: "unknown", estimatedCostUsd: i + 1 }));
@@ -217,6 +241,13 @@ describe("renderRoiReport", () => {
     ]) {
       expect(output).toContain(text);
     }
+  });
+
+  it("shows pending spend with a re-run hint when sessions are pending", () => {
+    const metrics = computeRoiMetrics([attribution({ method: "pending-data", estimatedCostUsd: 6 })]);
+    const output = renderRoiReport(metrics, false);
+    expect(output).toContain("Pending spend");
+    expect(output).toContain("re-run");
   });
 
   it("prints a plain message instead of empty tables/lists", () => {

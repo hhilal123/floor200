@@ -79,12 +79,14 @@ The code is open — audit it. The privacy rules are hard constraints in this re
 
 ## How attribution works — and what it can't know
 
-Floor200 matches each usage session to the nearest commit within 24 hours after the session ends. If that commit is part of a merged PR, the match gets stronger. Every attribution carries an explicit confidence level with a human-readable explanation:
+Floor200 matches each usage session to the nearest commit inside a matching window — by default from 2 hours before the session's last activity (agentic commits usually land *during* the session) to 24 hours after. Commits belonging to the same merged PR (branch commits plus the merge commit) are treated as one unit of work, so a merge pair landing seconds apart counts as corroboration, not ambiguity. Every attribution carries an explicit confidence level with a human-readable explanation:
 
 - **high** — nearest commit is in a merged PR, landed within 2 hours, and the session's repository context matched this repo.
 - **medium** — PR-backed, but slower or missing repository context.
 - **low** — commit-only evidence; no merged PR contains that commit.
-- **unknown** — unattributed, with the reason stated. Floor200 refuses to guess: if the two nearest candidate commits are within 15 minutes of each other, or the nearest PR-backed commit is more than 8 hours out, it reports *unknown* rather than inventing precision.
+- **unknown** — unattributed, with the reason stated. Floor200 refuses to guess: if the two nearest candidates from *different* units of work are within 15 minutes of each other, or the nearest PR-backed commit is more than 8 hours out, it reports *unknown* rather than inventing precision. Sessions too recent for their commits to have been collected yet are labeled *pending* and resolve on the next run instead of being counted as waste.
+
+The window sizes are tunable in `.floor200.yml` under `attribution:` (`lookbackHours`, `windowHours`, `ambiguityMinutes`).
 
 Honest limitations:
 
