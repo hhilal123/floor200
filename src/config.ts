@@ -79,27 +79,32 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export async function readProjectRepo(
-  baseDirectory = process.cwd(),
-): Promise<string> {
-  const configPath = join(baseDirectory, ".floor200.yml");
+/** Reads and parses `.floor200.yml`; returns undefined when the file does not exist. */
+async function readConfigFile(configPath: string): Promise<unknown | undefined> {
   let contents: string;
-
   try {
     contents = await readFile(configPath, "utf8");
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      throw new MissingConfigError(configPath);
+      return undefined;
     }
-
     throw error;
   }
 
-  let config: unknown;
   try {
-    config = parse(contents);
+    return parse(contents);
   } catch {
     throw new InvalidConfigError(configPath);
+  }
+}
+
+export async function readProjectRepo(
+  baseDirectory = process.cwd(),
+): Promise<string> {
+  const configPath = join(baseDirectory, ".floor200.yml");
+  const config = await readConfigFile(configPath);
+  if (config === undefined) {
+    throw new MissingConfigError(configPath);
   }
 
   const project = isRecord(config) && isRecord(config.project)
@@ -123,27 +128,18 @@ export async function readAttributionTuning(
   baseDirectory = process.cwd(),
 ): Promise<AttributionTuning> {
   const configPath = join(baseDirectory, ".floor200.yml");
-  let contents: string;
-  try {
-    contents = await readFile(configPath, "utf8");
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return { ...DEFAULT_ATTRIBUTION_TUNING };
-    }
-    throw error;
-  }
-
-  let config: unknown;
-  try {
-    config = parse(contents);
-  } catch {
-    throw new InvalidConfigError(configPath);
+  const config = await readConfigFile(configPath);
+  if (config === undefined) {
+    return { ...DEFAULT_ATTRIBUTION_TUNING };
   }
 
   const section = isRecord(config) && isRecord(config.attribution)
     ? config.attribution
     : {};
   const tuning = { ...DEFAULT_ATTRIBUTION_TUNING };
+  for (const key of Object.keys(section)) {
+    if (!(key in tuning)) throw new InvalidConfigError(configPath);
+  }
   for (const key of Object.keys(tuning) as Array<keyof AttributionTuning>) {
     const value = section[key];
     if (value === undefined || value === null) continue;

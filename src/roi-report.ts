@@ -177,11 +177,12 @@ export function renderRoiReport(metrics: RoiMetrics, useColor = true): string {
   );
 
   const modelTable = new Table({
-    head: ["Model", "Total spend", "Attributed", "Unattributed", "Attributed merged PRs", "Cost / merged PR"],
+    head: ["Model", "Total spend", "Attributed", "Unattributed", "Pending", "Attributed merged PRs", "Cost / merged PR"],
   });
   for (const model of metrics.modelBreakdown) {
     modelTable.push([
       model.model, money(model.totalSpend), money(model.attributedSpend), money(model.unattributedSpend),
+      money(model.pendingSpend),
       model.uniqueAttributedMergedPrs,
       model.uniqueAttributedMergedPrs === 0 ? "—" : money(model.costPerAttributedMergedPr),
     ]);

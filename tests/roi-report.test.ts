@@ -250,6 +250,17 @@ describe("renderRoiReport", () => {
     expect(output).toContain("re-run");
   });
 
+  it("renders a Pending column so model rows reconcile with their totals", () => {
+    const metrics = computeRoiMetrics([
+      attribution({ sessionId: "a", model: "claude", method: "pending-data", estimatedCostUsd: 6 }),
+      attribution({ sessionId: "b", model: "claude", estimatedCostUsd: 4 }),
+    ]);
+    const output = renderRoiReport(metrics, false);
+    const modelSection = output.slice(output.indexOf("Spend by model"));
+    expect(modelSection).toContain("Pending");
+    expect(modelSection).toContain("$6.00");
+  });
+
   it("prints a plain message instead of empty tables/lists", () => {
     const metrics = computeRoiMetrics([]);
     const output = renderRoiReport(metrics, false);

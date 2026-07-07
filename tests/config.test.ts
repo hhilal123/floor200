@@ -63,6 +63,16 @@ describe("readAttributionTuning", () => {
     });
   });
 
+  it("rejects unknown keys in the attribution section instead of silently ignoring typos", async () => {
+    const directory = await temporaryProject();
+    await writeFile(
+      join(directory, ".floor200.yml"),
+      'attribution:\n  windowHour: 12\n',
+      "utf8",
+    );
+    await expect(readAttributionTuning(directory)).rejects.toBeInstanceOf(InvalidConfigError);
+  });
+
   it("rejects non-positive or non-numeric tuning values", async () => {
     const directory = await temporaryProject();
     await writeFile(
