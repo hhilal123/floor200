@@ -24,11 +24,13 @@ Tracks what's actually built against what's next. Update this file (not just `pr
 
 - [x] GitHub repo made public
 - [x] `floor200@0.1.0` published to npm — verified live via clean-directory `npx floor200 report --demo`; registry shasum matches the locally verified tarball
+- [x] `floor200@0.2.0` published to npm (2026-07-08) — ships the attribution quality iteration (PR #12); publish run from a real terminal for passkey 2FA
 
 ## Next — post-launch (in order)
 
-- [ ] Claude Code hook installer (auto-capture usage as sessions happen, instead of relying on manual `collect` runs)
-- [ ] Attribution quality round 2 (not yet scoped): codex/other-agent project scoping when ccusage exposes it, richer signals beyond commit timing (e.g. changed-file overlap)
+- [ ] Claude Code hook installer (auto-capture usage as sessions happen, instead of relying on manual `collect` runs) — also shrinks the pending-data window, mechanically raising attribution coverage
+- [ ] Attribution ground-truth review tool (`floor200 attribute --review` or similar): label real attributions right/wrong locally to measure precision before adding new matching signals
+- [ ] Attribution quality round 2 (not yet scoped, gated on the review tool showing it's needed): codex/other-agent project scoping when ccusage exposes it, richer signals beyond commit timing (e.g. changed-file overlap once the hook captures per-session files)
 
 ## Later / not yet scoped
 
