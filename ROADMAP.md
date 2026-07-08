@@ -19,6 +19,7 @@ Tracks what's actually built against what's next. Update this file (not just `pr
 - [x] npm publish readiness — `"private": true` dropped, MIT license, `files`/repo metadata added, tarball verified from a clean directory (`docs/superpowers/specs/2026-07-06-npm-publish-and-readme-design.md`)
 - [x] README as the pitch — privacy-first positioning, sample report output, quickstart, honest "how attribution works and what it can't know" section (same spec)
 - [x] Attribution quality iteration — PR-unit candidate grouping (merge pair = corroboration, not ambiguity), 2h lookback window for mid-session commits, tunable windows via `attribution:` config, `pending-data` state for right-censored sessions, confidence score/label reconciliation; in-scope attributed sessions went from 1 to 18 on real data (`docs/superpowers/specs/2026-07-07-attribution-quality-iteration.md`)
+- [x] Manual ground-truth check of v0.2.0 attributions — hand-labeled every attribution against what the sessions actually were: the high-confidence bucket was error-free, but the medium bucket contained cross-project false positives (sessions with no repository context are still attributable), and PRs merged minutes apart proved indistinguishable by timing alone (`docs/superpowers/specs/2026-07-08-post-launch-ordering-and-ground-truth-check.md`)
 
 ## Launch (completed 2026-07-06)
 
@@ -26,11 +27,12 @@ Tracks what's actually built against what's next. Update this file (not just `pr
 - [x] `floor200@0.1.0` published to npm — verified live via clean-directory `npx floor200 report --demo`; registry shasum matches the locally verified tarball
 - [x] `floor200@0.2.0` published to npm (2026-07-08) — ships the attribution quality iteration (PR #12); publish run from a real terminal for passkey 2FA
 
-## Next — post-launch (in order)
+## Next — post-launch (in order, see `docs/superpowers/specs/2026-07-08-post-launch-ordering-and-ground-truth-check.md`)
 
-- [ ] Claude Code hook installer (auto-capture usage as sessions happen, instead of relying on manual `collect` runs) — also shrinks the pending-data window, mechanically raising attribution coverage
-- [ ] Attribution ground-truth review tool (`floor200 attribute --review` or similar): label real attributions right/wrong locally to measure precision before adding new matching signals
-- [ ] Attribution quality round 2 (not yet scoped, gated on the review tool showing it's needed): codex/other-agent project scoping when ccusage exposes it, richer signals beyond commit timing (e.g. changed-file overlap once the hook captures per-session files)
+- [ ] Session metadata enrichment — read `cwd`, git branch, and real session boundaries from Claude Code and Codex session JSONL (metadata only, never transcript content), and match session branch ↔ PR `headRefName` in attribution. Fixes both measured failure modes: definitive project scoping for all agents (kills cross-project false positives) and branch-level disambiguation of PRs merged minutes apart
+- [ ] Claude Code hook installer (auto-capture usage as sessions happen) — time-sensitive: session JSONL is cleaned up after ~30 days, so uncaptured history is unrecoverable; also captures per-session changed-file paths for quality round 2 and shrinks the pending-data window
+- [ ] Attribution ground-truth review tool (`floor200 attribute --review` or similar) — gated on attribution volume making manual labeling impractical (the 2026-07-08 check was done by hand)
+- [ ] Attribution quality round 2 (not yet scoped, gated on measured precision showing it's needed): changed-file overlap between hook-captured session files and commit files, and other signals beyond timing
 
 ## Later / not yet scoped
 
